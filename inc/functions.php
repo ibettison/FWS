@@ -1812,7 +1812,7 @@ function view_team_members() {
 		$team_name 			        = $_POST["team_name"];
 		$teamUser 				    = dl::select("flexi_team", "team_name = '".$team_name."'");
 		$teamSorted                 = "select * from flexi_team_user as ftu join flexi_user as fu on (ftu.user_id=fu.user_id) where ftu.team_id = ".$teamUser[0]["team_id"]." and ftu.user_id <> 0 order by fu.user_name";
-		//$teams 					    = dl::select("flexi_team_user", "team_id = ".$teamUser[0]["team_id"]." and user_id <> 0");
+		//$teams 					= dl::select("flexi_team_user", "team_id = ".$teamUser[0]["team_id"]." and user_id <> 0");
         $teams                      = dl::getQuery($teamSorted);
 	}else{
 		$team_id 				    = $_GET["team"];
