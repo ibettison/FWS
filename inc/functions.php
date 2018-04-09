@@ -1809,17 +1809,16 @@ function reset_additional_leave() {
 function view_team_members() {
 	//dl::$debug=true;
 	if(!empty($_POST)) { //Team is a selection from the drop down list
-		$team_name 			    = $_POST["team_name"];
-		$teamUser 				= dl::select("flexi_team", "team_name = '".$team_name."'");
-		$teams 					= dl::select("flexi_team_user", "team_id = ".$teamUser[0]["team_id"]." and user_id <> 0");
+		$team_name 			        = $_POST["team_name"];
+		$teamUser 				    = dl::select("flexi_team", "team_name = '".$team_name."'");
+		$teams 					    = dl::select("flexi_team_user", "team_id = ".$teamUser[0]["team_id"]." and user_id <> 0");
 	}else{
-		$team_id 				= $_GET["team"];
-		$team_name 			    = dl::select("flexi_team", "team_id = ".$team_id);
-		$teams 					= dl::select("flexi_team_user", "team_id = ".$team_id." and user_id <> 0");
+		$team_id 				    = $_GET["team"];
+		$team_name 			        = dl::select("flexi_team", "team_id = ".$team_id);
+		$teams 					    = dl::select("flexi_team_user", "team_id = ".$team_id." and user_id <> 0");
 	}
-
 	foreach($teams as $tm) {
-		$user_name 				= dl::select("flexi_user", "user_id = ".$tm["user_id"], "user_name");
+		$user_name 				    = dl::select("flexi_user", "user_id = ".$tm["user_id"], "user_name");
 		if(!empty($user_name) )
 		{
             $userNames[] 			= array("user_name"=>$user_name[0]["user_name"], user_id=>$user_name[0]["user_id"]);
@@ -1831,7 +1830,7 @@ function view_team_members() {
             $nextYrLeave 			= $leaveCheck->getNextYrLeaveTaken();
             $hoursLeave				= $leaveCheck->getHoursLeave();
             $hoursTaken 			= $leaveCheck->getHoursTaken();
-            $leaveAccountType 	= $leaveCheck->getLeaveAccountType();
+            $leaveAccountType 	    = $leaveCheck->getLeaveAccountType();
             $proRataTime 			= $leaveCheck->getProRataTime();
             //now lets check if they have any additional holidays
             $additional				=0;
@@ -1839,15 +1838,14 @@ function view_team_members() {
             $additional 			= $additionalHols[0]["additional_leave"];
             $leave[]			    =array("days_taken"=>$used, "entitled_to"=>$entitledTo, "additional"=>$additional, "next_year"=>$nextYrLeave, "hours_leave"=>$hoursLeave, "hours_taken"=>$hoursTaken, "account_type"=>$leaveAccountType, "proRata"=>$proRataTime);
         }
-
 	}
 	$leaveCount = 0;
 	echo "<div class='timesheet_header'>Team Members</div>";
 	echo "<table class='table_view'>";
 	if(check_permission("View User Leave")) {
 		echo "<tr><th>User Names</th><th>Hours Leave</th><th>Hours Taken</th><th>Additional Hours</th><th>Remaining</th><th>Next Year</th></tr>";
-		//sort the user names in the array $user Names
-        $sortedNames = asort($userNames);
+		//sort the user names in the array $userNames
+        //$sortedNames = asort($userNames);
 		foreach($userNames as $user) {
 			$deleted = dl::select("flexi_deleted", "user_id=".$user["user_id"]);
 			$remaining=round($leave[$leaveCount]["hours_leave"]+$leave[$leaveCount]["additional"]-$leave[$leaveCount]["hours_taken"], 2);
