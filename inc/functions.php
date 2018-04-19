@@ -4097,6 +4097,7 @@ function add_event_type() {
 			array("prompt"=>"User can delete", "type"=>"checkbox", "name"=>"del_tag", "value"=>"Yes", "clear"=>false),
 			array("prompt"=>"Can override Template", "type"=>"checkbox", "name"=>"override_template", "value"=>"Yes", "clear"=>false),
 			array("prompt"=>"Show Remainder", "type"=>"checkbox", "name"=>"remainder", "value"=>"Yes", "clear"=>true),
+            array("prompt"=>"Is Public?", "type"=>"checkbox", "name"=>"public", "value"=>"Yes", "clear"=>true),
 			array("prompt"=>"Select Colour", "type"=>"colour", "name"=>"sel_colour", "length"=>20, "value"=>"", "clear"=>true),
 			array("prompt"=>"Duration Type", "type"=>"radio", "name"=>"duration_type", "listarr"=>array("Fixed","User definable", "Both"), "selected"=>"fixed", "value"=>"", "clear"=>true),
 			array("prompt"=>"Changes Time", "type"=>"checkbox", "name"=>"changes_time", "value"=>"Yes", "clear"=>false),
@@ -4113,7 +4114,7 @@ function add_event_type() {
 
 function save_event_type() {
 	//dl::$debug = true;
-	$fieldarr = array("event_type_name", "event_colour", "event_shortcode","event_description","event_al", "event_flexi","event_work","event_global","event_authorisation", "event_sickness","event_delete", "event_override", "event_remainder");
+	$fieldarr = array("event_type_name", "event_colour", "event_shortcode","event_description","event_al", "event_flexi","event_work","event_global","event_authorisation", "event_sickness","event_delete", "event_override", "event_remainder", "event_public");
 	$leave=$_POST["leave_tag"];
 	$flexi=$_POST["flexi_tag"];
 	$work=$_POST["work_tag"];
@@ -4123,6 +4124,7 @@ function save_event_type() {
 	$delete=$_POST["del_tag"];
 	$override=$_POST["override_template"];
 	$remainder = $_POST["remainder"];
+	$public = $_POST["public"];
 	if($leave == "") {
 		$leave = "No";
 	}
@@ -4150,7 +4152,10 @@ function save_event_type() {
 	if($remainder== "") {
 		$remainder = "No";
 	}
-	$postarr = array($_POST["type_name"],$_POST["sel_colour"],$_POST["short_code"],$_POST["type_description"],$leave, $flexi, $work, $global, $author, $sick, $delete, $override, $remainder);
+    if($public== "") {
+        $public = "No";
+    }
+	$postarr = array($_POST["type_name"],$_POST["sel_colour"],$_POST["short_code"],$_POST["type_description"],$leave, $flexi, $work, $global, $author, $sick, $delete, $override, $remainder, $public);
 	$save = array_combine($fieldarr, $postarr);
 	dl::insert("flexi_event_type", $save);
 	//saved the template name now need to get the template name id
@@ -4169,9 +4174,9 @@ function view_event_types() {
 	echo "<div class='timesheet_header'>View Event Types</div>";
 	$events = dl::select("flexi_event_type");
 	echo "<table class='table_view'>";
-	echo "<tr><th>Name</th><th>Colour</th><th>Short Code</th><th>Description</th><th>Annual Leave</th><th>Flexi</th><th>Work</th><th>Sick</th><th>Global</th><th>Author-isation</th><th>Can delete</th><th>Can Override</th><th>Show remainder</th></tr>";
+	echo "<tr><th>Name</th><th>Colour</th><th>Short Code</th><th>Description</th><th>Annual Leave</th><th>Flexi</th><th>Work</th><th>Sick</th><th>Global</th><th>Is Public</th><th>Author-<BR/>isation</th><th>Can delete</th><th>Can Override</th><th>Show remainder</th></tr>";
 	foreach($events as $event) {
-		echo "<tr><td>".$event["event_type_name"]."</td><td style='background-color:".$event["event_colour"].";' >&nbsp;</td><td>".$event["event_shortcode"]."</td><td>".$event["event_description"]."</td><td>".$event["event_al"]."</td><td>".$event["event_flexi"]."</td><td>".$event["event_work"]."</td><td>".$event["event_sickness"]."</td><td>".$event["event_global"]."</td><td>".$event["event_authorisation"]."</td><td>".$event["event_delete"]."</td><td>".$event["event_override"]."</td><td>".$event["event_remainder"]."</td></tr>";
+		echo "<tr><td>".$event["event_type_name"]."</td><td style='background-color:".$event["event_colour"].";' >&nbsp;</td><td>".$event["event_shortcode"]."</td><td>".$event["event_description"]."</td><td>".$event["event_al"]."</td><td>".$event["event_flexi"]."</td><td>".$event["event_work"]."</td><td>".$event["event_sickness"]."</td><td>".$event["event_global"]."</td><td>".$event["event_public"]."</td><td>".$event["event_authorisation"]."</td><td>".$event["event_delete"]."</td><td>".$event["event_override"]."</td><td>".$event["event_remainder"]."</td></tr>";
 	}
 	echo "</table>";
 }
@@ -4181,9 +4186,9 @@ function select_event_types() {
 		echo "<div class='timesheet_header'>Edit Event Types</div>";
 		$events = dl::select("flexi_event_type");
 		echo "<table class='table_view'>";
-		echo "<tr><th>Name</th><th>Colour</th><th>Short Code</th><th>Description</th><th>Leave</th><th>Flexi</th><th>Work</th><th>Sick</th><th>Global</th><th>Author-isation</th><th>Can delete</th><th>Can Override</th><th>Show remainder</th><th>Delete</th><th>Edit</th></tr>";
+		echo "<tr><th>Name</th><th>Colour</th><th>Short Code</th><th>Description</th><th>Leave</th><th>Flexi</th><th>Work</th><th>Sick</th><th>Global</th><th>Is Public?</th><th>Author-<BR/>isation</th><th>Can delete</th><th>Can Override</th><th>Show remainder</th><th>Delete</th><th>Edit</th></tr>";
 		foreach($events as $event) {
-			echo "<tr><td>".$event["event_type_name"]."</td><td style='background-color:".$event["event_colour"].";' >&nbsp;</td><td>".$event["event_shortcode"]."</td><td>".$event["event_description"]."</td><td>".$event["event_al"]."</td><td>".$event["event_flexi"]."</td><td>".$event["event_work"]."</td><td>".$event["event_sickness"]."</td><td>".$event["event_global"]."</td><td>".$event["event_authorisation"]."</td><td>".$event["event_delete"]."</td><td>".$event["event_override"]."</td><td>".$event["event_remainder"]."</td><td><a href='index.php?func=deleteeventtype&id=".$event["event_type_id"]."'>delete</a></td><td><a href='index.php?func=editeventtype&id=".$event["event_type_id"]."'>edit</a></td></tr>";
+			echo "<tr><td>".$event["event_type_name"]."</td><td style='background-color:".$event["event_colour"].";' >&nbsp;</td><td>".$event["event_shortcode"]."</td><td>".$event["event_description"]."</td><td>".$event["event_al"]."</td><td>".$event["event_flexi"]."</td><td>".$event["event_work"]."</td><td>".$event["event_sickness"]."</td><td>".$event["event_global"]."</td><td>".$event["event_public"]."</td><td>".$event["event_authorisation"]."</td><td>".$event["event_delete"]."</td><td>".$event["event_override"]."</td><td>".$event["event_remainder"]."</td><td><a href='index.php?func=deleteeventtype&id=".$event["event_type_id"]."'>delete</a></td><td><a href='index.php?func=editeventtype&id=".$event["event_type_id"]."'>edit</a></td></tr>";
 		}
 		echo "</table>";
 	}
@@ -4210,6 +4215,7 @@ function edit_event_types() {
 				array("prompt"=>"User can delete", "type"=>"checkbox", "name"=>"del_tag", "selected"=>$editType["event_delete"], "value"=>"Yes", "clear"=>false),
 				array("prompt"=>"Can Override Template", "type"=>"checkbox", "name"=>"override_template", "selected"=>$editType["event_override"], "value"=>"Yes", "clear"=>false),
 				array("prompt"=>"Show remainder", "type"=>"checkbox", "name"=>"remainder", "selected"=>$editType["event_remainder"], "value"=>"Yes", "clear"=>true),
+                array("prompt"=>"Is Public?", "type"=>"checkbox", "name"=>"public", "selected"=>$editType["event_public"], "value"=>"Yes", "clear"=>true),
 				array("prompt"=>"Current Colour (select a new colour to change)", "type"=>"text", "name"=>"sel_colour", "length"=>20, "value"=>$editType["event_colour"], "clear"=>true),
 				array("prompt"=>"Select Colour", "type"=>"colour", "name"=>"new_colour", "length"=>20, "value"=>$editType["event_colour"], "clear"=>true),
 				array("prompt"=>"Duration Type", "type"=>"radio", "name"=>"duration_type", "listarr"=>array("Fixed","User definable", "Both"), "selected"=>$editType["duration_type"], "value"=>"", "clear"=>true),
@@ -4227,7 +4233,7 @@ function edit_event_types() {
 }
 
 function save_event_type_edit() {
-	$fieldarr = array("event_type_name", "event_colour", "event_shortcode","event_description", "event_al", "event_flexi","event_work","event_global","event_authorisation","event_sickness","event_delete", "event_override", "event_remainder");
+	$fieldarr = array("event_type_name", "event_colour", "event_shortcode","event_description", "event_al", "event_flexi","event_work","event_global","event_authorisation","event_sickness","event_delete", "event_override", "event_remainder", "event_public");
 	if(!empty($_POST["new_colour"])) {
 		$colour=$_POST["new_colour"]; 
 	}else{
@@ -4242,6 +4248,7 @@ function save_event_type_edit() {
 	$delete=$_POST["del_tag"];
 	$override = $_POST["override_template"];
 	$remainder = $_POST["remainder"];
+	$public = $_POST["public"];
 	if($leave == "") {
 		$leave = "No";
 	}
@@ -4269,7 +4276,10 @@ function save_event_type_edit() {
 	if($delete == "") {
 		$delete = "No";
 	}
-	$postarr = array($_POST["type_name"],$colour,$_POST["short_code"],$_POST["type_description"],$leave, $flexi, $work, $global, $author, $sick, $delete, $override, $remainder);
+    if($public == "") {
+        $public = "No";
+    }
+	$postarr = array($_POST["type_name"],$colour,$_POST["short_code"],$_POST["type_description"],$leave, $flexi, $work, $global, $author, $sick, $delete, $override, $remainder, $public);
 	$save = array_combine($fieldarr, $postarr);
 	dl::update("flexi_event_type", $save, "event_type_id=".$_GET["id"]);
 	//now update the settings
