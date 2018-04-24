@@ -220,6 +220,11 @@ function check_permission($value) {
 				return true;
 			}
 		break;
+        case "Leave Only":
+            if($_SESSION["userPermissions"]["leave_only"]== "true") {
+                return true;
+            }
+            break;
 	}
 	return false;
 }
@@ -878,7 +883,7 @@ function view_timesheet($userId, $pStartDate="", $pEndDate="") {
 	}	
 	echo "<div class='timesheet_header'>TIMESHEET</div>";
     echo "<div class='timesheet_name'>".$name."</div>";
-	if(date("H:i", strtotime($flexiInPot)) != "00:00" ) {
+	if(date("H:i", strtotime($flexiInPot)) != "00:00"  and !check_permission("Leave Only")) {
 		$flexi_carried_over					= "User has ".$sign.date("H:i", strtotime($flexiInPot)). " (hh:mm) flexitime carried over from last period.";
 		echo "<div class='timesheet_flexipot'>".$flexi_carried_over."</div>";
 	}
@@ -948,45 +953,56 @@ function view_timesheet($userId, $pStartDate="", $pEndDate="") {
 					if(date('l',strtotime($date))!="Saturday") {
 						echo "<div id='empty".$emptyDate."' data-horizontal-offset='-264' data-vertical-offset='-15' data-dropdown='#emptydropdown".$emptyDate."' class='timesheet_table_header_white' style='cursor: pointer;'><div class='timesheet_padding'>".date($shortDate, strtotime($date))."</div></div>";
 						//echo "<div id='empty".$emptyDate."' data-dropdown='emptydropdown".$emptyDate."' class='timesheet_table_header_white' onclick='location.href=\"index.php?choice=Add&subchoice=addevent&type=Working Day&userid=".$userId."&date=".date("Y-m-d", strtotime($date))."\"' style='cursor: pointer;'><div class='timesheet_padding'>".date($shortDate, strtotime($date))."</div></div>";
-						echo "<div id='emptydropdown".$emptyDate."' class='dropdown dropdown-tip'>";
-						echo "<ul class='dropdown-menu'>";
-							//use event types to populate the dropdown list
-							$list_types = dl::select("flexi_event_type");
-							$ids="";
-							$eId = $event["event_id"];						
-							foreach($list_types as $lt){
-								//lets exclude the types that only Admin can enter
-								if($lt["event_type_name"] !== "Bank Holiday" and $lt["event_type_name"] !== "University Shutdown") {
-									echo "<li id='".$lt["event_type_id"]."-empty".$emptyDate."'><a href='#1'>".$lt["event_type_name"]."</a><li>";								
-									$ids[] = $lt["event_type_id"]."-empty".$emptyDate;
-								}
-							}
-						echo "</ul>";
-						echo "</div>";
-						foreach($ids as $id) {			
-							?>
-							<script>
-							$("#<?php echo $id?>").click(function() {
-								$.post(
-									"ajax.php",
-									{ 
-										func: 'get_event_type',
-										id: $(this).prop("id")
-									},
-									function (data)
-										{
-											var json = $.parseJSON(data);
-											window.location.href = "index.php?choice=Add&subchoice=addevent&type="+json.type+"&userid=<?php echo $userId?>&date=<?php echo date("Y-m-d", strtotime($date))?>";
-										}
-								);
-							});
-							</script>
-							<?php
-						}
+						if($own_timesheet or $authorise) {
+                            echo "<div id='emptydropdown".$emptyDate."' class='dropdown dropdown-tip'>";
+                            echo "<ul class='dropdown-menu'>";
+                            //use event types to populate the dropdown list
+                            $list_types = dl::select("flexi_event_type");
+                            $ids="";
+                            $eId = $event["event_id"];
+                            foreach($list_types as $lt){
+                                //lets exclude the types that only Admin can enter
+                                if($lt["event_type_name"] !== "Bank Holiday" and $lt["event_type_name"] !== "University Shutdown") {
+                                    echo "<li id='".$lt["event_type_id"]."-empty".$emptyDate."'><a href='#1'>".$lt["event_type_name"]."</a><li>";
+                                    $ids[] = $lt["event_type_id"]."-empty".$emptyDate;
+                                }
+                            }
+                            echo "</ul>";
+                            echo "</div>";
+                        }
+
+						if($own_timesheet or $authorise){
+                            foreach($ids as $id) {
+                                ?>
+                                <script>
+                                    $("#<?php echo $id?>").click(function() {
+                                        $.post(
+                                            "ajax.php",
+                                            {
+                                                func: 'get_event_type',
+                                                id: $(this).prop("id")
+                                            },
+                                            function (data)
+                                            {
+                                                var json = $.parseJSON(data);
+                                                window.location.href = "index.php?choice=Add&subchoice=addevent&type="+json.type+"&userid=<?php echo $userId?>&date=<?php echo date("Y-m-d", strtotime($date))?>";
+                                            }
+                                        );
+                                    });
+                                </script>
+                                <?php
+                            }
+                        }
+
 						$emptyDate++;
 						$date = add_date(strtotime($date),1);
 					}else{
-						if($own_timesheet or $authorise) {
+					    if($permissions[0]["permission_leave_only"] == "true"){
+                            echo "<div class='timesheet_table_header_time'><div class='timesheet_padding'>-</div></div>";
+                            echo "<div class='timesheet_table_header_time'><div class='timesheet_padding'>-</div></div>";
+                            echo "<div class='timesheet_table_header_time'><div class='timesheet_padding'>-</div></div>";
+                            echo "<div class='timesheet_table_header_time'><div class='timesheet_padding'>-</div></div>";
+                        }elseif ($own_timesheet or $authorise) {
 							//summarise
 							//get working week in hrs
 							/*$hoursPerWeek = $daysDayHours * $daysPerWeek;
@@ -1170,25 +1186,28 @@ function view_timesheet($userId, $pStartDate="", $pEndDate="") {
 						$pixels 					+= $mins/5;
 						//need to calculate the pixels for the timediff
 						$pxWidth 					= $pixels;
+//TODO keep the colour of the event if is is of public type (Completed 20/04/2018)
+
 						//get the event Type and colour
-						if($own_timesheet or $authorise) {
+						if($own_timesheet or $authorise or $eventType[0]["event_public"] == "Yes") {
 							$eventColour 			= $eventType[0]["event_colour"];
 							$eventShortCode 		= $eventType[0]["event_shortcode"];
 						}else{
 							$eventColour 			= "#CCC";
 						}
 						//get any notes and attach to the alt check if they are public or private
-						if($authorise or $own_timesheet) {
+						if($authorise or $own_timesheet or $eventType[0]["event_public"] == "Yes") {
 							$sql					="select * from flexi_event_notes as en 
 												join flexi_notes as n on (en.note_id=n.notes_id) 
 												where event_id=".$event["event_id"];
 							$notes 					= dl::getQuery($sql);
 						}
                         $note = "";
+//						TODO need to make the notes available if the Event Type is public. completed 20/04/2018
 						if(!empty($notes)) {
 							if($notes[0]["notes_type"] == "Public" and $authorise) {
 								$note 				= "\n\n".$notes[0]["notes_note"];
-							}elseif($own_timesheet) {
+							}elseif($own_timesheet or $eventType[0]["event_public"] == "Yes") {
 								$note 				= "\n\n".$notes[0]["notes_note"];
 							}
 						}else{
@@ -1202,7 +1221,11 @@ function view_timesheet($userId, $pStartDate="", $pEndDate="") {
 						}else{
 							if( substr($event["event_startdate_time"],0,10) >= $flexiStartPeriod) {
 								if($eventType[0]["event_global"] == "No") {
-									echo "<div class='timesheet_table_header_white' title='$dateTitle'><div class='timesheet_padding'><div title='$alt' class='connected' id='time".$event["event_id"]."'style='cursor: move; float:left; background-color:".$eventColour."; width:".$pxWidth."px '>";
+								    if($own_timesheet or $authorise){
+                                        echo "<div class='timesheet_table_header_white' title='$dateTitle'><div class='timesheet_padding'><div title='$alt' class='connected' id='time".$event["event_id"]."'style='cursor: move; float:left; background-color:".$eventColour."; width:".$pxWidth."px '>";
+                                    }else{
+                                        echo "<div class='timesheet_table_header_white' title='$dateTitle'><div class='timesheet_padding'><div title='$alt' style='float:left; background-color:".$eventColour."; width:".$pxWidth."px '>";
+                                    }
 								}else{
 									echo "<div class='timesheet_table_header_white' title='$dateTitle'><div class='timesheet_padding'><div title='$alt' style='float:left; background-color:".$eventColour."; width:".$pxWidth."px '>";
 								}
@@ -1281,14 +1304,14 @@ function view_timesheet($userId, $pStartDate="", $pEndDate="") {
 							//need to calculate the pixels for the timediff
 							$pxWidth = $pixels;
 							//get the event Type and colour
-							if($own_timesheet or $authorise) {
+							if($own_timesheet or $authorise or $eventType[0]["event_public"] == "Yes") {
 								$eventColour = $eventType[0]["event_colour"];
 								$eventShortCode = $eventType[0]["event_shortcode"];
 							}else{
 								$eventColour = "#CCC";
 							}
 							//get any notes and attach to the alt check if they are public or private
-							if($authorise or $own_timesheet) {
+							if($authorise or $own_timesheet or $eventType[0]["event_public"] == "Yes") {
 								$sql="select * from flexi_event_notes as en 
 								join flexi_notes as n on (en.note_id=n.notes_id) 
 								where event_id=".$events[$loopCount]["event_id"];
@@ -1298,7 +1321,7 @@ function view_timesheet($userId, $pStartDate="", $pEndDate="") {
 							if(!empty($notes)) {
 								if($notes[0]["notes_type"] == "Public" and $authorise) {
 									$note = "\n\n".$notes[0]["notes_note"];
-								}elseif($own_timesheet) {
+								}elseif($own_timesheet or $eventType[0]["event_public"] == "Yes") {
 									$note = "\n\n".$notes[0]["notes_note"];
 								}
 							}
@@ -1309,7 +1332,11 @@ function view_timesheet($userId, $pStartDate="", $pEndDate="") {
 							}else{
 								if( substr($events[$loopCount]["event_startdate_time"],0,10) > $flexiStartPeriod) {
 									if($eventType[0]["event_global"] == "No") {
-										echo "<div class='connected' id='time".$events[$loopCount]["event_id"]."' style='cursor: move; float:left; background-color:".$eventColour."; width:".$pxWidth."px ' title='$alt'>";
+									    if($own_timesheet or $authorise){
+                                            echo "<div class='connected' id='time".$events[$loopCount]["event_id"]."' style='cursor: move; float:left; background-color:".$eventColour."; width:".$pxWidth."px ' title='$alt'>";
+                                        }else{
+                                            echo "<div style='float:left; background-color:".$eventColour."; width:".$pxWidth."px ' title='$alt'>";
+                                        }
 									}else{
 										echo "<div style='float:left; background-color:".$eventColour."; width:".$pxWidth."px ' title='$alt'>";
 									}
@@ -1330,24 +1357,27 @@ function view_timesheet($userId, $pStartDate="", $pEndDate="") {
 						}
 						echo "</div>";
 						echo "<div id='test'></div>";
-						 /* 
-						 * create dropdowns here
-						 */
-						echo "<div id='dropdown-events".$event["event_id"]."' class='dropdown-anchor-right dropdown dropdown-tip' style='z-index: 1'>";
-						echo "<ul class='dropdown-menu'>";
-							//use event types to populate the dropdown list
-							$list_types = dl::select("flexi_event_type");
-							$ids="";
-							$eId = $event["event_id"];						
-							foreach($list_types as $lt){
-								//lets exclude the types that only Admin can enter
-								if($lt["event_type_name"] !== "Bank Holiday" and $lt["event_type_name"] !== "University Shutdown") {
-									echo "<li id='".$lt["event_type_id"]."-".$eId."'><a href='#1'>".$lt["event_type_name"]."</a><li>";								
-									$ids[] = $lt["event_type_id"]."-".$eId;
-								}
-							}
-						echo "</ul>";
-						echo "</div>";
+						if($own_timesheet or $authorise){
+                            /*
+                         * create dropdowns here
+                         */
+                            echo "<div id='dropdown-events".$event["event_id"]."' class='dropdown-anchor-right dropdown dropdown-tip' style='z-index: 1'>";
+                            echo "<ul class='dropdown-menu'>";
+                            //use event types to populate the dropdown list
+                            $list_types = dl::select("flexi_event_type");
+                            $ids="";
+                            $eId = $event["event_id"];
+                            foreach($list_types as $lt){
+                                //lets exclude the types that only Admin can enter
+                                if($lt["event_type_name"] !== "Bank Holiday" and $lt["event_type_name"] !== "University Shutdown") {
+                                    echo "<li id='".$lt["event_type_id"]."-".$eId."'><a href='#1'>".$lt["event_type_name"]."</a><li>";
+                                    $ids[] = $lt["event_type_id"]."-".$eId;
+                                }
+                            }
+                            echo "</ul>";
+                            echo "</div>";
+                        }
+
 						$eventsToday = dl::select("flexi_event", "event_startdate_time >= '".substr($date,0,10)." 00:00:00' and event_enddate_time <= '".substr($date,0,10)." 23:59:59' and timesheet_id =".$timesheetId);
 						//now lets set the start Duration selected if the starttime is earlier than 10:00 and the option get value = 'another'
 						$selectedTime = "09:00";
@@ -1364,60 +1394,68 @@ function view_timesheet($userId, $pStartDate="", $pEndDate="") {
 						}
 						echo "<div id='valDisp' class='dropdown dropdown-panel' style='z-index: 2;'></div>";
 						echo "<div id='arrow-left' class='dropdown dropdown-panel' style='z-index: 100; position: absolute; width:0; height:0; border-top: 5px solid transparent; border-bottom: 5px solid transparent; border-right: 5px solid #fff; display:none;'></div>";
-						foreach($ids as $id) {
-							//lets check for other events already entered for this day
-							?>
-							<script>
-							$("#<?php echo $id?>").on({
-								mouseenter: function () {
-									divLeft 		= $("#dropdown-events<?php echo $eId?>").position().left;
-									divTop			= $("#dropdown-events<?php echo $eId?>").position().top; 
-									divWidth 		= $("#dropdown-events<?php echo $eId?>").width();									
-									divPos			= divLeft + divWidth+5;
-									$("#valDisp").css({top:divTop+8+'px', left:divPos+'px'});
-									$("#valDisp").show();
-									$("#arrow-left").css({top:divTop+$(this).position().top+15+'px', left:divPos-4+'px'});
-									$("#arrow-left").show();
-									$.post(
-										"ajax.php",
-										{ 
-											func: 'get_field_list',
-											id: $(this).prop("id"),
-											desc: $(this).text(),
-											date: '<?php echo substr($date,0,10) ?>',
-											time: '<?php echo $selectedTime?>',
-											start: '<?php echo $selectedEndTime?>',
-											user: '<?php echo $userId?>'
-										},
-										function (data)
-											{
-												$("#valDisp").html(data);
-											}
-									);
-								}
-							});
-							$("#<?php echo $id?>").click(function() {
-								$.post(
-									"ajax.php",
-									{ 
-										func: 'get_event_type',
-										id: $(this).prop("id")
-									},
-									function (data)
-										{
-											var json = $.parseJSON(data);
-											window.location.href = "index.php?choice=Add&subchoice=addevent&type="+json.type+"&userid=<?php echo $userId?>&date=<?php echo date("Y-m-d", strtotime($date))?>&option=another";
-										}
-								);
-							});
-							</script>
-							<?php	
-						}
+                        if($own_timesheet or $authorise) {
+                            foreach ($ids as $id) {
+                                //lets check for other events already entered for this day
+                                ?>
+                                <script>
+                                    $("#<?php echo $id?>").on({
+                                        mouseenter: function () {
+                                            divLeft = $("#dropdown-events<?php echo $eId?>").position().left;
+                                            divTop = $("#dropdown-events<?php echo $eId?>").position().top;
+                                            divWidth = $("#dropdown-events<?php echo $eId?>").width();
+                                            divPos = divLeft + divWidth + 5;
+                                            $("#valDisp").css({top: divTop + 8 + 'px', left: divPos + 'px'});
+                                            $("#valDisp").show();
+                                            $("#arrow-left").css({
+                                                top: divTop + $(this).position().top + 15 + 'px',
+                                                left: divPos - 4 + 'px'
+                                            });
+                                            $("#arrow-left").show();
+                                            $.post(
+                                                "ajax.php",
+                                                {
+                                                    func: 'get_field_list',
+                                                    id: $(this).prop("id"),
+                                                    desc: $(this).text(),
+                                                    date: '<?php echo substr($date, 0, 10) ?>',
+                                                    time: '<?php echo $selectedTime?>',
+                                                    start: '<?php echo $selectedEndTime?>',
+                                                    user: '<?php echo $userId?>'
+                                                },
+                                                function (data) {
+                                                    $("#valDisp").html(data);
+                                                }
+                                            );
+                                        }
+                                    });
+                                    $("#<?php echo $id?>").click(function () {
+                                        $.post(
+                                            "ajax.php",
+                                            {
+                                                func: 'get_event_type',
+                                                id: $(this).prop("id")
+                                            },
+                                            function (data) {
+                                                var json = $.parseJSON(data);
+                                                window.location.href = "index.php?choice=Add&subchoice=addevent&type=" + json.type + "&userid=<?php echo $userId?>&date=<?php echo date("Y-m-d", strtotime($date))?>&option=another";
+                                            }
+                                        );
+                                    });
+                                </script>
+                                <?php
+                            }
+                        }
 					 
 						$date = add_date(strtotime($date),1);
 						
 					}else{
-						if($own_timesheet or $authorise) {
+                        if($permissions[0]["permission_leave_only"] == "true"){
+                            echo "<div class='timesheet_table_header_time'><div class='timesheet_padding'>-</div></div>";
+                            echo "<div class='timesheet_table_header_time'><div class='timesheet_padding'>-</div></div>";
+                            echo "<div class='timesheet_table_header_time'><div class='timesheet_padding'>-</div></div>";
+                            echo "<div class='timesheet_table_header_time'><div class='timesheet_padding'>-</div></div>";
+                        }elseif ($own_timesheet or $authorise) {
 							//summary
 							//get working week in hrs
 							/*$hoursPerWeek = $daysDayHours * $daysPerWeek;
@@ -1482,49 +1520,51 @@ function view_timesheet($userId, $pStartDate="", $pEndDate="") {
 			}else{ //$flexiAccPeriod == Calendar Month
 				echo date('N', strtotime($date));
 			}
-			?>
-			<script>
-			$(function() {
-				 $( "#time<?php echo $event["event_id"] ?>").draggable({
-					connectWith: "#sortable-deleted",
-					opacity: 0.5,
-					revert: false,
-					helper: "clone"
-				})
-			});
-			
-			$(document).ready(function(){
-				 $( "#sortable-deleted" ).droppable({
-					drop: function(event, ui) {
-						var func = "check_delete";
-						var droppedId = ui.draggable.attr("id");
-						$('#poof').show();
-						$('#poof').sprite({
-							fps: 10,
-							no_of_frames: 5,
-							rewind: false
-						});
-						setTimeout("$('#poof').hide()", 500);
-						$.post(
-						"ajax.php",
-						{ func: func,
-							dropped: droppedId,
-							pagelocation: "<?php echo $_SESSION["pageLocation"]?>",
-							start: "<?php echo $_SESSION["startPeriod"]?>",
-							end: "<?php echo $_SESSION["endPeriod"]?>",
-							user: "<?php echo $_SESSION["user"]?>"
-						},
-						function (data)
-						{
-							$("#delConfirm").html(data);
-							
-						});	
-					}
-				});
-			});
-			
-			</script>
-			<?php 
+            if($own_timesheet or $authorise) {
+                ?>
+                <script>
+                    $(function () {
+                        $("#time<?php echo $event["event_id"] ?>").draggable({
+                            connectWith: "#sortable-deleted",
+                            opacity: 0.5,
+                            revert: false,
+                            helper: "clone"
+                        })
+                    });
+
+                    $(document).ready(function () {
+                        $("#sortable-deleted").droppable({
+                            drop: function (event, ui) {
+                                var func = "check_delete";
+                                var droppedId = ui.draggable.attr("id");
+                                $('#poof').show();
+                                $('#poof').sprite({
+                                    fps: 10,
+                                    no_of_frames: 5,
+                                    rewind: false
+                                });
+                                setTimeout("$('#poof').hide()", 500);
+                                $.post(
+                                    "ajax.php",
+                                    {
+                                        func: func,
+                                        dropped: droppedId,
+                                        pagelocation: "<?php echo $_SESSION["pageLocation"]?>",
+                                        start: "<?php echo $_SESSION["startPeriod"]?>",
+                                        end: "<?php echo $_SESSION["endPeriod"]?>",
+                                        user: "<?php echo $_SESSION["user"]?>"
+                                    },
+                                    function (data) {
+                                        $("#delConfirm").html(data);
+
+                                    });
+                            }
+                        });
+                    });
+
+                </script>
+                <?php
+            }
 		}//end of $events foreach
 		
 		//loop to show full timesheet (empty days)
@@ -1536,46 +1576,53 @@ function view_timesheet($userId, $pStartDate="", $pEndDate="") {
 				//echo "<div class='timesheet_table_header_white' onclick='location.href=\"index.php?choice=Add&subchoice=addevent&type=Working Day&userid=".$userId."&date=".date("Y-m-d", strtotime($date))."\"' style='cursor: pointer;'><div class='timesheet_padding'>".date($shortDate, strtotime($date))."</div></div>";
 				echo "<div id='empty".$emptyDate."' data-horizontal-offset='-264' data-vertical-offset='-15' data-dropdown='#emptydropdown".$emptyDate."' class='timesheet_table_header_white' style='cursor: pointer;'><div class='timesheet_padding'>".date($shortDate, strtotime($date))."</div></div>";
 				//echo "<div id='empty".$emptyDate."' data-dropdown='emptydropdown".$emptyDate."' class='timesheet_table_header_white' onclick='location.href=\"index.php?choice=Add&subchoice=addevent&type=Working Day&userid=".$userId."&date=".date("Y-m-d", strtotime($date))."\"' style='cursor: pointer;'><div class='timesheet_padding'>".date($shortDate, strtotime($date))."</div></div>";
-				echo "<div id='emptydropdown".$emptyDate."' class='dropdown dropdown-tip'>";
-				echo "<ul class='dropdown-menu'>";
-					//use event types to populate the dropdown list
-					$list_types = dl::select("flexi_event_type");
-					$ids="";
-					$eId = $event["event_id"];						
-					foreach($list_types as $lt){
-						//lets exclude the types that only Admin can enter
-						if($lt["event_type_name"] !== "Bank Holiday" and $lt["event_type_name"] !== "University Shutdown") {
-							echo "<li id='".$lt["event_type_id"]."-empty".$emptyDate."'><a href='#1'>".$lt["event_type_name"]."</a><li>";								
-							$ids[] = $lt["event_type_id"]."-empty".$emptyDate;
-						}
-					}
-				echo "</ul>";
-				echo "</div>";
-
-				foreach($ids as $id) {			
-				?>
-				<script>
-				$("#<?php echo $id?>").click(function() {
-					$.post(
-						"ajax.php",
-						{ 
-							func: 'get_event_type',
-							id: $(this).prop("id")
-						},
-						function (data)
-							{
-								var json = $.parseJSON(data);
-								window.location.href = "index.php?choice=Add&subchoice=addevent&type="+json.type+"&userid=<?php echo $userId?>&date=<?php echo date("Y-m-d", strtotime($date))?>";
-							}
-					);
-				});
-				</script>
-				<?php
-				}
+                if($own_timesheet or $authorise) {
+                    echo "<div id='emptydropdown" . $emptyDate . "' class='dropdown dropdown-tip'>";
+                    echo "<ul class='dropdown-menu'>";
+                    //use event types to populate the dropdown list
+                    $list_types = dl::select("flexi_event_type");
+                    $ids = "";
+                    $eId = $event["event_id"];
+                    foreach ($list_types as $lt) {
+                        //lets exclude the types that only Admin can enter
+                        if ($lt["event_type_name"] !== "Bank Holiday" and $lt["event_type_name"] !== "University Shutdown") {
+                            echo "<li id='" . $lt["event_type_id"] . "-empty" . $emptyDate . "'><a href='#1'>" . $lt["event_type_name"] . "</a><li>";
+                            $ids[] = $lt["event_type_id"] . "-empty" . $emptyDate;
+                        }
+                    }
+                    echo "</ul>";
+                    echo "</div>";
+                }
+                if($own_timesheet or $authorise) {
+                    foreach ($ids as $id) {
+                        ?>
+                        <script>
+                            $("#<?php echo $id?>").click(function () {
+                                $.post(
+                                    "ajax.php",
+                                    {
+                                        func: 'get_event_type',
+                                        id: $(this).prop("id")
+                                    },
+                                    function (data) {
+                                        var json = $.parseJSON(data);
+                                        window.location.href = "index.php?choice=Add&subchoice=addevent&type=" + json.type + "&userid=<?php echo $userId?>&date=<?php echo date("Y-m-d", strtotime($date))?>";
+                                    }
+                                );
+                            });
+                        </script>
+                        <?php
+                    }
+                }
 				$emptyDate++;
 				$date = add_date(strtotime($date),1);
 			}else{
-				if($own_timesheet or $authorise) {
+                if($permissions[0]["permission_leave_only"] == "true"){
+                    echo "<div class='timesheet_table_header_time'><div class='timesheet_padding'>-</div></div>";
+                    echo "<div class='timesheet_table_header_time'><div class='timesheet_padding'>-</div></div>";
+                    echo "<div class='timesheet_table_header_time'><div class='timesheet_padding'>-</div></div>";
+                    echo "<div class='timesheet_table_header_time'><div class='timesheet_padding'>-</div></div>";
+                }elseif ($own_timesheet or $authorise) {
 					//summarise
 					//get working week in hrs
 					/*$hoursPerWeek = $daysDayHours * $daysPerWeek;
@@ -4429,6 +4476,7 @@ function add_permissions() {
 			array("prompt"=>"Override view timesheet", "type"=>"selection", "name"=>"overridetimesheet", "listarr"=>array( "false", "true" ), "selected"=>"false", "value"=>"", "clear"=>true),
 			array("prompt"=>"Override Local Manager constraint", "type"=>"selection", "name"=>"overrideLM", "listarr"=>array( "false", "true" ), "selected"=>"false", "value"=>"", "clear"=>false),
 			array("prompt"=>"Override Leave Entry", "type"=>"selection", "name"=>"overrideLeave", "listarr"=>array( "false", "true" ), "selected"=>"false", "value"=>"", "clear"=>true),
+            array("prompt"=>"Leave Only", "type"=>"selection", "name"=>"leaveOnly", "listarr"=>array( "false", "true" ), "selected"=>$permissions[0]["permission_leave_only"], "value"=>"", "clear"=>true),
 			array("type"=>"submit", "buttontext"=>"Create Template", "clear"=>true),
 			array("type"=>'endform'));
 			$form = new forms;
@@ -4453,8 +4501,8 @@ function save_permissions() {
 	foreach($get_id as $id) {
 		$fieldId = $id["permission_id"];
 	}
-	$fieldarr= array("permission_template_name_id", "permission_description", "permission_user","permission_templates","permission_teams","permission_team_events","permission_team_authorise","permission_events","permission_event_types","permission_add_time","permission_edit_time","permission_edit_locked_time","permission_add_global","permission_override_delete","permission_edit_flexipot","permission_view_leave","permission_messaging", "permission_view_timesheet", "permission_view_override", "permission_LM_constraint", "permission_override_leave_entry", "permission_view_reports", "permission_year_end", "permission_lock");
-	$postarr= array($fieldId,$_POST["temp_description"],$_POST["edit_users"],$_POST["edit_templates"],$_POST["edit_teams"],$_POST["edit_teamevents"],$_POST["team_authority"],$_POST["events"], $_POST["event_types"],$_POST["add_time"],$_POST["edit_time"],$_POST["edit_locked"], $_POST["add_global"], $_POST["override"], $_POST["flexipot"], $_POST["userleave"], $_POST["usertimesheet"], $_POST["usermessaging"], $_POST["overridetimesheet"], $_POST["overrideLM"], $_POST["overrideLeave"], $_POST["viewreports"], $_POST["yearend"], $_POST["overrideLock"]);
+	$fieldarr= array("permission_template_name_id", "permission_description", "permission_user","permission_templates","permission_teams","permission_team_events","permission_team_authorise","permission_events","permission_event_types","permission_add_time","permission_edit_time","permission_edit_locked_time","permission_add_global","permission_override_delete","permission_edit_flexipot","permission_view_leave","permission_messaging", "permission_view_timesheet", "permission_view_override", "permission_LM_constraint", "permission_override_leave_entry", "permission_view_reports", "permission_year_end", "permission_lock", "permission_leave_only");
+	$postarr= array($fieldId,$_POST["temp_description"],$_POST["edit_users"],$_POST["edit_templates"],$_POST["edit_teams"],$_POST["edit_teamevents"],$_POST["team_authority"],$_POST["events"], $_POST["event_types"],$_POST["add_time"],$_POST["edit_time"],$_POST["edit_locked"], $_POST["add_global"], $_POST["override"], $_POST["flexipot"], $_POST["userleave"],  $_POST["usermessaging"], $_POST["usertimesheet"],$_POST["overridetimesheet"], $_POST["overrideLM"], $_POST["overrideLeave"], $_POST["viewreports"], $_POST["yearend"], $_POST["overrideLock"], $_POST["leaveOnly"]);
 	$save=array_combine($fieldarr, $postarr);
 	dl::insert("flexi_permission_template", $save);
 	echo "<SCRIPT language='javascript'>redirect('index.php?choice=Templates&subchoice=permissiontemplate')</SCRIPT>" ;
@@ -4492,7 +4540,8 @@ function edit_permissions() {
 			array("prompt"=>"Override view timesheet", "type"=>"selection", "name"=>"overridetimesheet", "listarr"=>array( "false", "true" ), "selected"=>$permissions[0]["permission_view_override"], "value"=>"", "clear"=>true),
 			array("prompt"=>"Override Local Manager constraint", "type"=>"selection", "name"=>"overrideLM", "listarr"=>array( "false", "true" ), "selected"=>$permissions[0]["permission_LM_constraint"], "value"=>"", "clear"=>false),
 			array("prompt"=>"Override Leave Entry", "type"=>"selection", "name"=>"overrideLeave", "listarr"=>array( "false", "true" ), "selected"=>$permissions[0]["permission_override_leave_entry"], "value"=>"", "clear"=>true),
-			array("type"=>"submit", "buttontext"=>"Save Template", "clear"=>true),
+            array("prompt"=>"Leave Only", "type"=>"selection", "name"=>"leaveOnly", "listarr"=>array( "false", "true" ), "selected"=>$permissions[0]["permission_leave_only"], "value"=>"", "clear"=>true),
+            array("type"=>"submit", "buttontext"=>"Save Template", "clear"=>true),
 			array("type"=>'endform'));
 			$form = new forms;
 			$form->create_form($formArr);
@@ -4503,8 +4552,8 @@ function save_permissions_edit() {
 	$fieldarr=array("permission_template_name");
 	$save = array_combine($fieldarr, array($_POST['template_name']));
 	dl::update("flexi_permission_template_name", $save, "permission_id=".$_GET["id"]);
-	$fieldarr= array("permission_description", "permission_user","permission_templates","permission_teams","permission_team_events","permission_team_authorise","permission_events","permission_event_types","permission_add_time","permission_edit_time","permission_edit_locked_time", "permission_add_global","permission_override_delete","permission_edit_flexipot","permission_view_leave","permission_view_timesheet","permission_messaging", "permission_view_override", "permission_LM_constraint","permission_override_leave_entry","permission_view_reports", "permission_year_end", "permission_lock");
-	$postarr= array($_POST["temp_description"],$_POST["edit_users"],$_POST["edit_templates"],$_POST["edit_teams"],$_POST["edit_teamevents"],$_POST["team_authority"],$_POST["events"], $_POST["event_types"],$_POST["add_time"],$_POST["edit_time"],$_POST["edit_locked"],$_POST["add_global"],$_POST["override"],$_POST["flexipot"],$_POST["userleave"], $_POST["usertimesheet"], $_POST["usermessaging"], $_POST["overridetimesheet"], $_POST["overrideLM"], $_POST["overrideLeave"], $_POST["viewreports"], $_POST["yearend"], $_POST["overrideLock"]);
+	$fieldarr= array("permission_description", "permission_user","permission_templates","permission_teams","permission_team_events","permission_team_authorise","permission_events","permission_event_types","permission_add_time","permission_edit_time","permission_edit_locked_time", "permission_add_global","permission_override_delete","permission_edit_flexipot","permission_view_leave","permission_view_timesheet","permission_messaging", "permission_view_override", "permission_LM_constraint","permission_override_leave_entry","permission_view_reports", "permission_year_end", "permission_lock", "permission_leave_only");
+	$postarr= array($_POST["temp_description"],$_POST["edit_users"],$_POST["edit_templates"],$_POST["edit_teams"],$_POST["edit_teamevents"],$_POST["team_authority"],$_POST["events"], $_POST["event_types"],$_POST["add_time"],$_POST["edit_time"],$_POST["edit_locked"],$_POST["add_global"],$_POST["override"],$_POST["flexipot"],$_POST["userleave"], $_POST["usertimesheet"], $_POST["usermessaging"], $_POST["overridetimesheet"], $_POST["overrideLM"], $_POST["overrideLeave"], $_POST["viewreports"], $_POST["yearend"], $_POST["overrideLock"], $_POST["leaveOnly"]);
 	$save=array_combine($fieldarr, $postarr);
 	dl::update("flexi_permission_template", $save, "permission_template_name_id=".$_GET["id"]);
 	echo "<SCRIPT language='javascript'>redirect('index.php?choice=Templates&subchoice=permissiontemplate')</SCRIPT>" ;
