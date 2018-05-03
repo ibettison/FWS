@@ -128,7 +128,7 @@ $cal = new calendars;
 			}
 		}else{
 			//message and return to access account
-			echo "<SCRIPT language='javascript'>alert(\"Sorry your user account has been disabled. Please contact an Administrator of the flexible working system to reinstate your id.\"); redirect('index.php')</SCRIPT>" ;
+			echo "<SCRIPT language='javascript'>alert(\"Sorry your user account has been disabled. Please contact an Administrator of the Time and Leave Recording system to reinstate your id.\"); redirect('index.php')</SCRIPT>" ;
 		}
 	}
 	if($_GET["func"] == "forgotPass") { //user has forgotton their password
@@ -146,7 +146,7 @@ $cal = new calendars;
 	}elseif($_GET["func"]=="changePassword") {
 		change_password($_POST, $_GET["passcode"]);	
 	}elseif(!isset($_SESSION["loggedin"]) and $_GET["func"] <> "confirmAcc" ){ //check if the session has been lost
-		$formArr = array(array(type=>"intro", formtitle=>"Flexible Working System Login", formintro=>"Enter your email address and password to access the CRP Flexible Working web Application."), 
+		$formArr = array(array(type=>"intro", formtitle=>"Time and Leave Recording System Login", formintro=>"Enter your email address and password to access the TiLeRS web Application."),
 			array(type=>"form", form=>array(action=>"index.php?func=login",method=>"post")),
 			array(prompt=>"Email Address", type=>"text", name=>"email_address", length=>20, value=>""), 
 			array(prompt=>"Password", type=>"password", name=>"password", length=>20, value=>""),
@@ -1071,12 +1071,12 @@ if($_SESSION["showMths"]== 4) {
 			}
 			
 	}else{ //show main screen
-			echo "<div class='main_header'>CRP Flexible Working Application</div>";
+			echo "<div class='main_header'>Time and Leave Recording System</div>";
 			echo "<div class='main_left'><img src='inc/css/images/flexitimeJuggler.gif'></div><div class='main_right'>";
-			echo "<p>Welcome to the CRP Flexible Working Application</p>";
-			echo "Your ID should have already been created, so type your email and password to enter the CRP Flexible Working system.";
+			echo "<p>Welcome to the Time and Leave Recording System (TiLeRS)</p>";
+			echo "Your ID should have already been created, so type your email and password to enter the TiLeRS system.";
 			echo "If your email address is not recognised please contact ";
-			echo "<a href='mailto:mandy.jarvis@ncl.ac.uk'>Mandy Jarvis</a> or CRP IT to add your email address to the system.</div>";
+			echo "<a href='mailto:mandy.jarvis@ncl.ac.uk'>Mandy Jarvis</a> or create a Ticket to add your email address to the system.</div>";
 	}?>
 	<script>
 	$(document).ready(function(){
