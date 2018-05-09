@@ -997,12 +997,7 @@ function view_timesheet($userId, $pStartDate="", $pEndDate="") {
 						$emptyDate++;
 						$date = add_date(strtotime($date),1);
 					}else{
-					    if($permissions[0]["permission_leave_only"] == "true"){
-                            echo "<div class='timesheet_table_header_time'><div class='timesheet_padding'>-</div></div>";
-                            echo "<div class='timesheet_table_header_time'><div class='timesheet_padding'>-</div></div>";
-                            echo "<div class='timesheet_table_header_time'><div class='timesheet_padding'>-</div></div>";
-                            echo "<div class='timesheet_table_header_time'><div class='timesheet_padding'>-</div></div>";
-                        }elseif ($own_timesheet or $authorise) {
+					    if ($own_timesheet or $authorise) {
 							//summarise
 							//get working week in hrs
 							/*$hoursPerWeek = $daysDayHours * $daysPerWeek;
@@ -1042,10 +1037,17 @@ function view_timesheet($userId, $pStartDate="", $pEndDate="") {
 								//in the red
 								$style 				= "background-color:#F00;";
 							}
-							echo "<div class='timesheet_table_header_time'><div class='timesheet_padding'>".number_format($hoursWorked,1)." hrs</div></div>";
-							echo "<div class='timesheet_table_header_time'><div class='timesheet_padding'>".number_format($hoursPerWeek,1)." hrs</div></div>";
-							echo "<div class='timesheet_table_header_time'><div class='timesheet_padding'>".number_format($workBalance,1)." hrs</div></div>";
-							echo "<div class='timesheet_table_header_time' style='$style'><div class='timesheet_padding'>".number_format($flexiPotTotal,1)." hrs</div></div>";
+							if($permissions[0]["permission_leave_only"] == "true" and $own_timesheet){
+                                echo "<div class='timesheet_table_header_time'><div class='timesheet_padding'>-</div></div>";
+                                echo "<div class='timesheet_table_header_time'><div class='timesheet_padding'>-</div></div>";
+                                echo "<div class='timesheet_table_header_time'><div class='timesheet_padding'>-</div></div>";
+                                echo "<div class='timesheet_table_header_time'><div class='timesheet_padding'>-</div></div>";
+                            }else{
+                                echo "<div class='timesheet_table_header_time'><div class='timesheet_padding'>".number_format($hoursWorked,1)." hrs</div></div>";
+                                echo "<div class='timesheet_table_header_time'><div class='timesheet_padding'>".number_format($hoursPerWeek,1)." hrs</div></div>";
+                                echo "<div class='timesheet_table_header_time'><div class='timesheet_padding'>".number_format($workBalance,1)." hrs</div></div>";
+                                echo "<div class='timesheet_table_header_time' style='$style'><div class='timesheet_padding'>".number_format($flexiPotTotal,1)." hrs</div></div>";
+                            }
 						}else{
 							echo "<div class='timesheet_table_header_time'><div class='timesheet_padding'>-</div></div>";
 							echo "<div class='timesheet_table_header_time'><div class='timesheet_padding'>-</div></div>";
@@ -1450,12 +1452,7 @@ function view_timesheet($userId, $pStartDate="", $pEndDate="") {
 						$date = add_date(strtotime($date),1);
 						
 					}else{
-                        if($permissions[0]["permission_leave_only"] == "true"){
-                            echo "<div class='timesheet_table_header_time'><div class='timesheet_padding'>-</div></div>";
-                            echo "<div class='timesheet_table_header_time'><div class='timesheet_padding'>-</div></div>";
-                            echo "<div class='timesheet_table_header_time'><div class='timesheet_padding'>-</div></div>";
-                            echo "<div class='timesheet_table_header_time'><div class='timesheet_padding'>-</div></div>";
-                        }elseif ($own_timesheet or $authorise) {
+                        if ($own_timesheet or $authorise) {
 							//summary
 							//get working week in hrs
 							/*$hoursPerWeek = $daysDayHours * $daysPerWeek;
@@ -1488,10 +1485,17 @@ function view_timesheet($userId, $pStartDate="", $pEndDate="") {
 								//in the black and not too much
 								$style = "background-color:#F00;";
 							}
-							echo "<div class='timesheet_table_header_time'><div class='timesheet_padding'>".number_format($hoursWorked,1)." hrs</div></div>";
-							echo "<div class='timesheet_table_header_time'><div class='timesheet_padding'>".number_format($hoursPerWeek, 1)." hrs</div></div>";
-							echo "<div class='timesheet_table_header_time'><div class='timesheet_padding'>".number_format($workBalance,1)." hrs</div></div>";
-							echo "<div class='timesheet_table_header_time' style='$style'><div class='timesheet_padding'>".number_format($flexiPotTotal,1)." hrs</div></div>";
+                            if($permissions[0]["permission_leave_only"] == "true" and $own_timesheet){
+                                echo "<div class='timesheet_table_header_time'><div class='timesheet_padding'>-</div></div>";
+                                echo "<div class='timesheet_table_header_time'><div class='timesheet_padding'>-</div></div>";
+                                echo "<div class='timesheet_table_header_time'><div class='timesheet_padding'>-</div></div>";
+                                echo "<div class='timesheet_table_header_time'><div class='timesheet_padding'>-</div></div>";
+                            }else{
+                                echo "<div class='timesheet_table_header_time'><div class='timesheet_padding'>".number_format($hoursWorked,1)." hrs</div></div>";
+                                echo "<div class='timesheet_table_header_time'><div class='timesheet_padding'>".number_format($hoursPerWeek,1)." hrs</div></div>";
+                                echo "<div class='timesheet_table_header_time'><div class='timesheet_padding'>".number_format($workBalance,1)." hrs</div></div>";
+                                echo "<div class='timesheet_table_header_time' style='$style'><div class='timesheet_padding'>".number_format($flexiPotTotal,1)." hrs</div></div>";
+                            }
 							$fieldList=array("timesheet_id","current_flexi");
 							$flexiMinutes = number_format($flexiPotTotal,1);
 							$valueArr = array($timesheetId, $flexiMinutes);
@@ -1617,12 +1621,7 @@ function view_timesheet($userId, $pStartDate="", $pEndDate="") {
 				$emptyDate++;
 				$date = add_date(strtotime($date),1);
 			}else{
-                if($permissions[0]["permission_leave_only"] == "true"){
-                    echo "<div class='timesheet_table_header_time'><div class='timesheet_padding'>-</div></div>";
-                    echo "<div class='timesheet_table_header_time'><div class='timesheet_padding'>-</div></div>";
-                    echo "<div class='timesheet_table_header_time'><div class='timesheet_padding'>-</div></div>";
-                    echo "<div class='timesheet_table_header_time'><div class='timesheet_padding'>-</div></div>";
-                }elseif ($own_timesheet or $authorise) {
+                if ($own_timesheet or $authorise) {
 					//summarise
 					//get working week in hrs
 					/*$hoursPerWeek = $daysDayHours * $daysPerWeek;
@@ -1662,10 +1661,17 @@ function view_timesheet($userId, $pStartDate="", $pEndDate="") {
 						//in the black and not too much
 						$style = "background-color:#F00;";
 					}
-					echo "<div class='timesheet_table_header_time'><div class='timesheet_padding'>".number_format($hoursWorked,1)." hrs</div></div>";
-					echo "<div class='timesheet_table_header_time'><div class='timesheet_padding'>".number_format($hoursPerWeek, 1)." hrs</div></div>";
-					echo "<div class='timesheet_table_header_time'><div class='timesheet_padding'>".number_format($workBalance,1)." hrs</div></div>";
-					echo "<div class='timesheet_table_header_time' style='$style'><div class='timesheet_padding'>".number_format($flexiPotTotal,1)." hrs</div></div>";
+                    if($permissions[0]["permission_leave_only"] == "true" and $own_timesheet){
+                        echo "<div class='timesheet_table_header_time'><div class='timesheet_padding'>-</div></div>";
+                        echo "<div class='timesheet_table_header_time'><div class='timesheet_padding'>-</div></div>";
+                        echo "<div class='timesheet_table_header_time'><div class='timesheet_padding'>-</div></div>";
+                        echo "<div class='timesheet_table_header_time'><div class='timesheet_padding'>-</div></div>";
+                    }else{
+                        echo "<div class='timesheet_table_header_time'><div class='timesheet_padding'>".number_format($hoursWorked,1)." hrs</div></div>";
+                        echo "<div class='timesheet_table_header_time'><div class='timesheet_padding'>".number_format($hoursPerWeek,1)." hrs</div></div>";
+                        echo "<div class='timesheet_table_header_time'><div class='timesheet_padding'>".number_format($workBalance,1)." hrs</div></div>";
+                        echo "<div class='timesheet_table_header_time' style='$style'><div class='timesheet_padding'>".number_format($flexiPotTotal,1)." hrs</div></div>";
+                    }
 					$fieldList=array("timesheet_id","current_flexi");
 					$flexiMinutes = number_format($flexiPotTotal,1);
 					$valueArr = array($timesheetId, $flexiMinutes);
