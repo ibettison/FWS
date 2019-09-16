@@ -7,9 +7,12 @@ function redirect(url) {
 </script>
 <?php
 session_start();
-error_reporting("E_ALL & ~E_NOTICE");
-//error_reporting("~E_NOTICE");
+ini_set('display_startup_errors',1);
+ini_set('display_errors',1);
 
+error_reporting("E_ALL & ~E_NOTICE");
+error_reporting("~E_NOTICE");
+//error_reporting(-1);
 require('inc/mysqli_datalayer.php');
 require('inc/connection.inc');
 include('inc/functions.php');
@@ -24,10 +27,13 @@ date_default_timezone_set('UTC');
 $cal = new calendars;
 ?>
 <head>
-<meta http-equiv="Content-Type" content="text/html" charset="utf-8" />
+<!--<meta http-equiv="Content-Type" content="text/html" charset="utf-8" />-->
+    <meta name="viewport" content="width=device-width, initial-scale=1">
 
 <title>Newcastle Biomedicine CRP Flexible Working Application</title>
 <LINK REL="StyleSheet" 		HREF="inc/css/normalise.css" TYPE="text/css" MEDIA="screen">
+    <!--<link rel="stylesheet" href="https://unpkg.com/purecss@1.0.0/build/pure-min.css" integrity="sha384-nn4HPE8lTHyVtfCBi5yW9d20FjT8BJwUXyWZT9InLYax14RDjBj46LmSztkmNP9w" crossorigin="anonymous">-->
+    <LINK REL="StyleSheet" 		HREF="inc/css/pure.css">
 <LINK REL="StyleSheet" 		HREF="inc/css/css.css" TYPE="text/css" MEDIA="screen">
 <LINK REL="StyleSheet" 		HREF="inc/css/form.css" TYPE="text/css" MEDIA="screen">
 <LINK REL="StyleSheet" 		HREF="inc/css/timesheet.css" TYPE="text/css" MEDIA="screen">
@@ -118,10 +124,10 @@ $cal = new calendars;
 							if($_SERVER["SERVER_NAME"] == "localhost"){
 								$host = "localhost";
 							}else{
-								$host = "database.ncl.ac.uk";
+							    $host = "mysql.ncl.ac.uk";
 							}
 							dl::closedb();
-							dl::connect($host, "nflexiem_crf", "rj8219pt", "nflexiem_crf");
+                            dl::connect($host, "FMS_nflexiem_crf_RW", "wIiFcgVMGJ", "nflexiem_crf");
 						}
 					}
 				}
@@ -234,7 +240,7 @@ $cal = new calendars;
 			join flexi_timesheet as t on (t.timesheet_id=e.timesheet_id) 
 			join flexi_user as u on (t.user_id=u.user_id) 
 			join flexi_team_user as tu on (tu.user_id=u.user_id) 
-			where u.user_id <> ".$_SESSION["userSettings"]["userId"]." and r.request_approved = '' and ".$teamWhere;
+			where u.user_id <> ".$_SESSION["userSettings"]["userId"]." and r.request_approved IS NULL and ".$teamWhere;
 			$count = dl::getQuery($sql);
 			$requests=0;
 			foreach($count as $c) {
@@ -275,7 +281,7 @@ $cal = new calendars;
 		join flexi_event as e on (r.request_event_id=e.event_id) 
 		join flexi_timesheet as t on (t.timesheet_id=e.timesheet_id) 
 		join flexi_user as u on (t.user_id=u.user_id) 
-		where r.request_approved = '' and u.user_id =".$userId;
+		where r.request_approved IS NULL and u.user_id =".$userId;
 		$count = dl::getQuery($sql);
 		if($count[0]["cRequest"]>0) {
 			$css = "request_message";
@@ -489,9 +495,9 @@ $cal = new calendars;
 					if($_SERVER["SERVER_NAME"] == "localhost"){
 						$host = "localhost";
 					}else{
-						$host = "database.ncl.ac.uk";
+						$host = "mysql.ncl.ac.uk";
 					}
-					dl::connect($host, "nflexiem_crf", "rj8219pt", "nflexiem_crf");
+					dl::connect($host, "FMS_nflexiem_crf_RW", "wIiFcgVMGJ", "nflexiem_crf");
 					// now need to locate user account and add password to security table and update user table
 					$user = dl::select("flexi_user", "user_email='".addslashes($_POST["email_address"])."'");
 					$user_id=$user[0]["user_id"];
@@ -1075,8 +1081,7 @@ if($_SESSION["showMths"]== 4) {
 			echo "<div class='main_left'><img src='inc/css/images/flexitimeJuggler.gif'></div><div class='main_right'>";
 			echo "<p>Welcome to the Time and Leave Recording System (TiLeRS)</p>";
 			echo "Your ID should have already been created, so type your email and password to enter the TiLeRS system.";
-			echo "If your email address is not recognised please contact ";
-			echo "<a href='mailto:mandy.jarvis@ncl.ac.uk'>Mandy Jarvis</a> or create a Ticket to add your email address to the system.</div>";
+			echo "If your email address is not recognised please <a href='https://nuservice.ncl.ac.uk' title='Create a Ticket'>create a ticket</a> and ask us to add your email address to the system.</div>";
 	}?>
 	<script>
 	$(document).ready(function(){

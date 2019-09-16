@@ -33,7 +33,7 @@ Flexible Working System";
 $email_4_subject = "Password Change Request";
 $email_4_content = "Dear %%whoto%%
 
-A request has been made to change your password within the Flexible Working system. If you didn't make this request then please ignore it, if you have forgotton your password please click on the link below to reset it.
+A request has been made to change your password within the Flexible Working system. If you didn't make this request then please ignore it, if you have forgotten your password please click on the link below to reset it.
 
 https://internal.ncl.ac.uk/crfflexi/index.php?func=resetPassword&passcode=%%link%%
 

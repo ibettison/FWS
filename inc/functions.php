@@ -63,7 +63,7 @@ function correct_globals() {
 			join flexi_template_days_settings as tds on (td.flexi_template_days_id = tds.template_days_id)
 			where u.user_id = ".$user[0]["user_id"];
 			$duration = dl::getQuery($sql);
-			$fullDay = $duration[0]["normal_day_duration"]; //******* Not used anymore *********
+			//$fullDay = $duration[0]["normal_day_duration"]; //******* Not used anymore *********
 			$endTime = $sd["event_startdate_time"];
 			$time = substr(date("Y-m-d H:i:s", strtotime($endTime) + strtotime($fullDay)),11,8);
 			if( $time <> substr($sd["event_enddate_time"],11,8) ) {
@@ -810,13 +810,13 @@ function view_timesheet($userId, $pStartDate="", $pEndDate="") {
 	$flexiID								= $day_settings[0]["days_settings_id"];
 	$daysTemplateType 						= $day_settings[0]["template_type"];
 	$daysPerWeek 							= $day_settings[0]["days_week"];
-	$daysDayDuration 						= $day_settings[0]["day_duration"]; //this is the policy day duration ie 7hr 24 mins ******* Not used anymore *********
-	$daysNormalDuration 					= $day_settings[0]["normal_day_duration"]; //this the user day duration as entered by them ******* Not used anymore *********
-	$daysTimeDifferential 					= strtotime($daysNormalDuration) - strtotime($daysDayDuration); //this is the difference between the day duration and Normal day duration
-	$daysHalfDayDuration 					= strtotime($daysDayDuration)/2;
-	$daysHalfDayDuration 					= date('H:i:s', $daysHalfDayDuration);
-	$daysDayHours 							= substr($daysDayDuration,0,2); //the duration of the day hours (What is required for each day!!)
-	$daysDayMins 							= substr($daysDayDuration,3,2); // the duration of the day minutes (What is required for each day!!)
+	//$daysDayDuration 						= $day_settings[0]["day_duration"]; //this is the policy day duration ie 7hr 24 mins ******* Not used anymore *********
+	//$daysNormalDuration 					= $day_settings[0]["normal_day_duration"]; //this the user day duration as entered by them ******* Not used anymore *********
+	//$daysTimeDifferential 					= strtotime($daysNormalDuration) - strtotime($daysDayDuration); //this is the difference between the day duration and Normal day duration
+	//$daysHalfDayDuration 					= strtotime($daysDayDuration)/2;
+	//$daysHalfDayDuration 					= date('H:i:s', $daysHalfDayDuration);
+	//$daysDayHours 							= substr($daysDayDuration,0,2); //the duration of the day hours (What is required for each day!!)
+	//$daysDayMins 							= substr($daysDayDuration,3,2); // the duration of the day minutes (What is required for each day!!)
 	$daysMinimumLunch						= $day_settings[0]["minimum_lunch"];
 	$daysMinimumLunchDuration 				= $day_settings[0]["minimum_lunch_duration"];
 	$daysLunchEarliest 						= $day_settings[0]["lunch_earliest_start_time"];
@@ -959,7 +959,7 @@ function view_timesheet($userId, $pStartDate="", $pEndDate="") {
                             echo "<ul class='dropdown-menu'>";
                             //use event types to populate the dropdown list
                             $list_types = dl::select("flexi_event_type");
-                            $ids="";
+                            $ids=array();
                             $eId = $event["event_id"];
                             foreach($list_types as $lt){
                                 //lets exclude the types that only Admin can enter
@@ -1375,7 +1375,7 @@ function view_timesheet($userId, $pStartDate="", $pEndDate="") {
                             echo "<ul class='dropdown-menu'>";
                             //use event types to populate the dropdown list
                             $list_types = dl::select("flexi_event_type");
-                            $ids="";
+                            $ids=array();
                             $eId = $event["event_id"];
                             foreach($list_types as $lt){
                                 //lets exclude the types that only Admin can enter
@@ -1600,7 +1600,7 @@ function view_timesheet($userId, $pStartDate="", $pEndDate="") {
                     echo "<ul class='dropdown-menu'>";
                     //use event types to populate the dropdown list
                     $list_types = dl::select("flexi_event_type");
-                    $ids = "";
+                    $ids = array();
                     $eId = $event["event_id"];
                     foreach ($list_types as $lt) {
                         //lets exclude the types that only Admin can enter
@@ -1988,7 +1988,7 @@ function approve_leave() {
 
 		$userId = $_SESSION["userSettings"]["userId"];
 		$team = dl::select("flexi_team_user", "user_id=".$userId);
-		$reqArr = "";
+		$reqArr = array();
 		foreach($team as $t) {
 			$sql = "select * from flexi_requests as r 
 			join flexi_event as e on (r.request_event_id=e.event_id) 
@@ -1996,7 +1996,7 @@ function approve_leave() {
 			join flexi_timesheet as t on (t.timesheet_id=e.timesheet_id) 
 			join flexi_user as u on (u.user_id=t.user_id)
 			join flexi_team_user as tu on (t.user_id=tu.user_id)
-			where u.user_id <> ".$_SESSION["userSettings"]["userId"]." and r.request_approved = '' and team_id=".$t["team_id"]." order by e.event_startdate_time DESC";
+			where u.user_id <> ".$_SESSION["userSettings"]["userId"]." and r.request_approved IS NULL and team_id=".$t["team_id"]." order by e.event_startdate_time DESC";
 			$requests = dl::getQuery($sql);
 			//get current users home team
 			$homeTeam = dl::select("flexi_team_local", "team_user_id=".$t["team_user_id"]);
@@ -2113,15 +2113,22 @@ function confirm_approval() {
 			$teamId = $emails[0]["team_id"];
 			$app=array(email=>$emails[0]["user_email"],user=>$emails[0]["user_name"], leaveDate=>$emails[0]["event_startdate_time"]);
 			//get approvers email and name
-			$sql="select * from flexi_team_user as tu  
+//			$sql="select * from flexi_team_user as tu
+//			join flexi_user as u on (tu.user_id=u.user_id)
+//			left outer join flexi_team_local as tl on (tu.team_user_id=tl.team_user_id)
+//			left outer join flexi_deleted as d on (u.user_id=d.user_id)
+//			where tu.team_id=$teamId and date_deleted IS NULL and tl.local_team_id IS NULL";
+            $sql="select * from flexi_team_user as tu  
 			join flexi_user as u on (tu.user_id=u.user_id) 
 			left outer join flexi_team_local as tl on (tu.team_user_id=tl.team_user_id)
 			left outer join flexi_deleted as d on (u.user_id=d.user_id)   
-			where tu.team_id=$teamId and date_deleted IS NULL and tl.local_team_id IS NULL";
+			where tu.team_id=$teamId and date_deleted IS NULL";
 			$authorise = dl::getQuery($sql);
+            $authEmail = array();
+            $authName = array();
 			foreach($authorise as $auth) {
-				$authoriser = dl::select("flexi_permission_template", "permission_template_name_id=".$auth["user_permission_id"]);
-				if($authoriser[0]["permission_team_authorise"]=="true") {
+			    $authoriser = dl::select("flexi_permission_template", "permission_template_name_id=".$auth["user_permission_id"]);
+				if($authoriser[0]["permission_team_authorise"]=="true" or $authoriser[0]["permission_LM_constraint"] == "true") {
 					if(!in_array($auth["user_email"], $authEmail)) {
 						$authEmail[] = $auth["user_email"];
 						$authName[] = $auth["user_name"];
@@ -2138,7 +2145,7 @@ function confirm_approval() {
 			
 			//send the email confirmation
 			$recips=explode(", ", $recipients);
-			$m->From( $_SESSION["userSettings"]["email"] ); // the first address in the recipients list is used as the from email contact and will receive emails in response to the registration request.
+			$m->From( 'fws@ncl.ac.uk'); // the first address in the recipients list is used as the from email contact and will receive emails in response to the registration request.
 			$m->autoCheck(false);
 			$m->To( $recipients );
 			$m->Subject( $AppSubject );
@@ -2189,7 +2196,7 @@ function confirm_approval() {
 			//send the email confirmation
 			$recips=explode(", ", $recipients);
 			$m = new Mail();
-			$m->From( $_SESSION["userSettings"]["email"] ); // the first address in the recipients list is used as the from email contact and will receive emails in response to the registration request.
+			$m->From( 'fws@ncl.ac.uk' ); // the first address in the recipients list is used as the from email contact and will receive emails in response to the registration request.
 			$m->autoCheck(false);
 			$m->To( $recipients );
 			$m->Subject( $RefSubject );
@@ -2207,7 +2214,11 @@ function confirm_approval() {
 function view_your_requests() {
 	$userId = $_SESSION["userSettings"]["userId"];
 	;
-	$sql = "select * from flexi_requests as r join flexi_event as e on (r.request_event_id=e.event_id) join flexi_event_type as et on (e.event_type_id=et.event_type_id) join flexi_timesheet as t on (t.timesheet_id=e.timesheet_id) join flexi_user as u on (t.user_id=u.user_id) where r.request_approved = '' and u.user_id =".$userId." order by e.event_startdate_time DESC";
+	$sql = "select * from flexi_requests as r join flexi_event as e on (r.request_event_id=e.event_id) 
+            join flexi_event_type as et on (e.event_type_id=et.event_type_id) 
+            join flexi_timesheet as t on (t.timesheet_id=e.timesheet_id) 
+            join flexi_user as u on (t.user_id=u.user_id) 
+            where r.request_approved IS NULL and u.user_id =".$userId." order by e.event_startdate_time DESC";
 	$requests = dl::getQuery($sql);
 	echo "<div class='timesheet_header'>Your Requests</div>";
 	echo "<table class='table_view'>";
@@ -2379,9 +2390,9 @@ function change_password($post, $passcode) {
 		if($_SERVER["SERVER_NAME"] == "localhost"){
 			$host = "localhost";
 		}else{
-			$host = "database.ncl.ac.uk";
+			$host = "mysql.ncl.ac.uk";
 		}
-		dl::connect($host, "nflexiem_crf", "rj8219pt", "nflexiem_crf");
+		dl::connect($host, "FMS_nflexiem_crf_RW", "wIiFcgVMGJ", "nflexiem_crf");
 		// now need to locate user account and add password to security table and update user table
 		$user = dl::select("flexi_user", "user_email='".$post["email_address"]."'");
 		$user_id=$user[0]["user_id"];
@@ -2672,7 +2683,7 @@ function save_user_edit() {
 	//lets check to see if the flexi template has changed. If it has then the day_duration may have changed meaning that all of the future events for this user need updating.
 	if($flexi_id <> $user_details[0]["user_flexi_template"]) { //confirmed a change has happened to the flexi template
 		$changeDate = $_POST["date_change"]." ".date("H:i:s", mktime(0,0,0,0,0,0));
-		$dates2Change = dl::select("flexi_event", "timesheet_id=".$timesheet[0]["timesheet_id"]." and event_startdate_time > '$changeDate'");
+		$dates2Change = dl::select("flexi_event", "timesheet_id=".$timesheet[0]["timesheet_id"]." and event_startdate_time > '$changeDate'", "event_startdate_time");
 		if(!empty($dates2Change)) {
 			foreach($dates2Change as $dchange) {
 				//get the days settings template details
@@ -2748,7 +2759,7 @@ function save_user_edit() {
 		}
 	}
 	$fieldarr = array("user_name", "user_email", "user_permission_id","user_al_template","user_time_template","user_flexi_template");
-	$postarr = array($_POST["name"],$_POST["email"],$perm_id, $al_id, $time_id, $flexi_id);
+	$postarr = array(addslashes($_POST["name"]),addslashes($_POST["email"]),$perm_id, $al_id, $time_id, $flexi_id);
 	$save = array_combine($fieldarr, $postarr);
 	dl::update("flexi_user", $save, "user_id=".$_GET["id"]);
 	//saved the template name now need to get the user id
@@ -3408,14 +3419,7 @@ function save_event($userId) {
 		if($eventGlobal=="No"){ //will write this record lower down.
 			dl::insert("flexi_event", $save);
 			$lastId = dl::getId();
-			if($eventType == 'Annual Leave') {
-				if($leaveDuration == "Full day") {
-					dl::insert("flexi_leave_count", array("flc_fullorhalf"=>1.0, "flc_event_id"=>$lastId));
-				}else{
-					dl::insert("flexi_leave_count", array("flc_fullorhalf"=>0.5, "flc_event_id"=>$lastId));
-				}
-			}
-			if($leaveDuration == "Remainder") { 
+			if($leaveDuration == "Remainder") {
 				//if this is a remainder then add a record to the remainder table. Used to change the end time of the remainder event when a working event is added with a real start time.
 				//the remainder event initially assumes a start time of 09:00 in the morning, uses the day duration from the users working pattern to create a supposed end time.
 				dl::insert("flexi_remainder", array("r_event"=>$lastId));
@@ -3425,18 +3429,18 @@ function save_event($userId) {
 		$id = dl::select("flexi_event", "timesheet_id=".$timeSheetId." and event_startdate_time = '".$startDateTime."' and event_type_id=".$eventId);
 		if($eventFlexiLeave == "Yes") {
 			//write the request record
-			dl::insert("flexi_requests", array(request_event_id=>$id[0]["event_id"]));
+			dl::insert("flexi_requests", array("request_event_id"=>$lastId));
 		}else{
 			if($eventAuthorisation == "Yes") {
 				//write the request record
-				dl::insert("flexi_requests", array(request_event_id=>$id[0]["event_id"]));
+				dl::insert("flexi_requests", array("request_event_id"=>$lastId));
 			}
 		}
 		$note_id = 0;
 		if(!empty($_POST["event_note"])) {
 			dl::insert("flexi_notes", array("notes_note"=>$_POST["event_note"], "notes_type"=>$_POST["event_note_type"]));
 			$note_id = dl::getId();
-			dl::insert("flexi_event_notes", array("event_id"=>$id[0]["event_id"], "note_id"=>$note_id));
+			dl::insert("flexi_event_notes", array("event_id"=>$lastId, "note_id"=>$note_id));
 		}
 		//first record written now check if need to add other dates
 		if($multipleDates) { // already checked that the dates do not match
@@ -3478,7 +3482,7 @@ function save_event($userId) {
 							if($minimum_lunch == "Yes") {
 								if(date("h", strtotime($duration_link[0]["fdt_working_time"])) >= 6) { // check if the time is greater than or equal to 6 hours. This is a EUROPEAN directive....
 									$add_lunch = strtotime($minimum_lunch_duration); // add min lunch as it will be taken off
-								}			
+								}
 							}
 							$duration = $duration_link[0]["fdt_working_time"];
 							$startTime = $_POST["duration_time_start"].":".$_POST["duration_time_start_mins"].":00";
@@ -3513,33 +3517,25 @@ function save_event($userId) {
 						
 						if($checked) {
 							$emailDayCount++;
-							$fieldarr = array("timesheet_id","event_startdate_time","event_enddate_time","event_type_id");
-							$postarr = array($timeSheetId, $startDateTime, $endDateTime, $eventId);
+							$fieldarr = array("timesheet_id","event_startdate_time","event_enddate_time","event_type_id", "event_lunch");
+							$postarr = array($timeSheetId, $startDateTime, $endDateTime, $eventId, date("H:i:s",$add_lunch));
 							$save = array_combine($fieldarr, $postarr);
 							dl::insert("flexi_event", $save);
 							$lastRec = dl::getId();
-							if($eventType == 'Annual Leave') {
-								if($leaveDuration == "Full day") {
-									dl::insert("flexi_leave_count", array("flc_fullorhalf"=>1.0, "flc_event_id"=>$lastRec));
-								}else{
-									dl::insert("flexi_leave_count", array("flc_fullorhalf"=>0.5, "flc_event_id"=>$lastRec));
-								}
-							}
-							$id = dl::select("flexi_event", "timesheet_id=".$timeSheetId." and event_startdate_time = '".$startDateTime."'");
 							if($eventFlexiLeave == "Yes") {
 								if(date("h", strtotime($endDateTime) - strtotime($startDateTime)) >=4) {
 									//write the request record
-									dl::insert("flexi_requests", array("request_event_id"=>$id[0]["event_id"]));
+									dl::insert("flexi_requests", array("request_event_id"=>$lastRec));
 								}
 							}else{
 								if($eventAuthorisation == "Yes") {
 									//write the request record
-									dl::insert("flexi_requests", array("request_event_id"=>$id[0]["event_id"]));
+									dl::insert("flexi_requests", array("request_event_id"=>$lastRec));
 								}
 							}
 							
 							if(!empty($_POST["event_note"])) {
-								dl::insert("flexi_event_notes", array("event_id"=>$id[0]["event_id"], "note_id"=>$note_id));
+								dl::insert("flexi_event_notes", array("event_id"=>$lastRec, "note_id"=>$note_id));
 							}	
 						}
 					}
@@ -3551,7 +3547,8 @@ function save_event($userId) {
 				
 		}
 		//now need to check what type of event it is and see if an authorisation is required
-		if($eventAuthorisation == "Yes") { 
+		if($eventAuthorisation == "Yes") {
+		    $recipients=array();
 			if(!empty($_SESSION["otherUser"])){
 				$userInfo = dl::select("flexi_user", "user_id=".$_SESSION["otherUser"]);
 				$userName=$userInfo[0]["user_name"];
@@ -3776,8 +3773,8 @@ function save_event($userId) {
 					$sql = "select * from flexi_user as u join flexi_timesheet as t on (u.user_id=t.user_id) where u.user_id = ".$_GET["user"];
 					$timesheet = dl::getQuery($sql);
 					$timeSheetId = $timesheet[0]["timesheet_id"];
-					$eventFields = array("timesheet_id","event_startdate_time","event_enddate_time","event_type_id");
-					$eventValues = array($timeSheetId, $startDateTime, $endDateTime, $eventId);
+					$eventFields = array("timesheet_id","event_startdate_time","event_enddate_time","event_lunch","event_type_id");
+					$eventValues = array($timeSheetId, $startDateTime, $endDateTime, $minimum_lunch_duration, $eventId);
 					$save = array_combine($eventFields, $eventValues);
 
 					//check if the event already exists and don't add it if it does.
@@ -5072,6 +5069,7 @@ function save_flexi_days_template() {
 		//now need to save the template days template name and link
 		$fieldarr=array("template_days_name","template_name_id");
 		$save = array_combine($fieldarr, array($_POST['template_name'], $linkId));
+		dl::$debug = true;
 		dl::insert("flexi_template_days", $save);
 		//saved the template name now need to get the template days id
 		$get_id = dl::select("flexi_template_days", "template_days_name = '".$_POST['template_name']."'");
@@ -5086,7 +5084,11 @@ function save_flexi_days_template() {
 		$postarr= array($fieldId,$_POST["template_type"],$_POST["days_per_week"], $_POST["earliest_start"].":".$_POST["earliest_start_mins"],$_POST["latest_start"].":".$_POST["latest_start_mins"],$min_lunch,$_POST["lunch_duration"].":".$_POST["lunch_duration_mins"], $_POST["lunch_earliest_start"].":".$_POST["lunch_earliest_start_mins"], $_POST["lunch_latest_end"].":".$_POST["lunch_latest_end_mins"], $_POST["earliest_end"].":".$_POST["earliest_end_mins"], $_POST["latest_end"].":".$_POST["latest_end_mins"]);
 		
 		$save=array_combine($fieldarr, $postarr);
+		// *******************************
+		//this isnt saving for some reason
+        // *******************************
 		dl::insert("flexi_template_days_settings", $save);
+		print_r($save);
 		$max = dl::getId();
 		$fields = array("fdt_weekday_id", "fdt_flexi_days_id", "fdt_working_time");
 		if(in_array("All", $week_day_array)) { //this array only has one element and applies to all of the days_per_week
@@ -5114,7 +5116,7 @@ function save_flexi_days_template() {
 		</script>
 		<?php 
 	}
-	echo "<SCRIPT language='javascript'>redirect('index.php?choice=Templates&subchoice=flexidaystemplate')</SCRIPT>" ;
+	//echo "<SCRIPT language='javascript'>redirect('index.php?choice=Templates&subchoice=flexidaystemplate')</SCRIPT>" ;
 }
 
 function edit_flexi_days_template() {

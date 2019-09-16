@@ -211,16 +211,16 @@
 
 @media only screen and (max-width: 768px) {
 	.working_space {
-		position: absolute;
-		left: 15px;
-		top: 8px;
-		min-width: 710px;
+		/*position: absolute;*/
+		/*left: 4px;*/
+		/*top: 4px;*/
+		min-width: 550px;
 	}
 	.header_left {
-		display: none;
+		min-width: 550px;
 	}
 	.calendar_main{
-		display: none;
+		min-width: 550px;
 	}
 	.timesheet_table_header, .timesheet_table_header_we, .timesheet_table_header_blank, .timesheet_table_header_white, .timesheet_table_header_white_we, .timesheet_table_header_time {
 		font-size:11px;
@@ -267,16 +267,16 @@
 }
 @media only screen and (max-width: 568px) {
 	.working_space {
-		position: absolute;
-		left: 4px;
-		top: 4px;
+		/*position: absolute;*/
+		/*left: 4px;*/
+		/*top: 4px;*/
 		min-width: 550px;
 	}
 	.header_left {
-		display: none;
+		min-width: 550px;
 	}
 	.calendar_main{
-		display: none;
+		min-width: 550px;
 	}
 	.timesheet_table_header, .timesheet_table_header_we, .timesheet_table_header_blank, .timesheet_table_header_white, .timesheet_table_header_white_we, .timesheet_table_header_time {
 		font-size:8px;
