@@ -3644,6 +3644,7 @@ function save_event($userId) {
 			if($_POST["individual"]!=="Yes") { //this means its not an individual amendment
 				//create the record in flexi_global_events to store the global event date
 				//this will be added to each new users timesheet
+                $globalLunch = "00:00:00";
 				$global_fields = array("event_date","event_type_id");
 				$global_values = array(substr($startDateTime,0,10), $eventId);
 				$global_write = array_combine($global_fields, $global_values);
@@ -3714,8 +3715,8 @@ function save_event($userId) {
 							$sql = "select * from flexi_user as u join flexi_timesheet as t on (u.user_id=t.user_id) where u.user_id = ".$user["user_id"];
 							$timesheet = dl::getQuery($sql);
 							$timeSheetId = $timesheet[0]["timesheet_id"];
-							$eventFields = array("timesheet_id","event_startdate_time","event_enddate_time","event_type_id");
-							$eventValues = array($timeSheetId, $startDateTime, $endDateTime, $eventId);
+							$eventFields = array("timesheet_id","event_startdate_time","event_enddate_time","event_type_id", "event_lunch");
+							$eventValues = array($timeSheetId, $startDateTime, $endDateTime, $eventId, $minimum_lunch_duration);
 							$save = array_combine($eventFields, $eventValues);
 
 							//check if the event already exists and don't add it if it does.
@@ -5069,7 +5070,6 @@ function save_flexi_days_template() {
 		//now need to save the template days template name and link
 		$fieldarr=array("template_days_name","template_name_id");
 		$save = array_combine($fieldarr, array($_POST['template_name'], $linkId));
-		dl::$debug = true;
 		dl::insert("flexi_template_days", $save);
 		//saved the template name now need to get the template days id
 		$get_id = dl::select("flexi_template_days", "template_days_name = '".$_POST['template_name']."'");
@@ -5084,11 +5084,7 @@ function save_flexi_days_template() {
 		$postarr= array($fieldId,$_POST["template_type"],$_POST["days_per_week"], $_POST["earliest_start"].":".$_POST["earliest_start_mins"],$_POST["latest_start"].":".$_POST["latest_start_mins"],$min_lunch,$_POST["lunch_duration"].":".$_POST["lunch_duration_mins"], $_POST["lunch_earliest_start"].":".$_POST["lunch_earliest_start_mins"], $_POST["lunch_latest_end"].":".$_POST["lunch_latest_end_mins"], $_POST["earliest_end"].":".$_POST["earliest_end_mins"], $_POST["latest_end"].":".$_POST["latest_end_mins"]);
 		
 		$save=array_combine($fieldarr, $postarr);
-		// *******************************
-		//this isnt saving for some reason
-        // *******************************
 		dl::insert("flexi_template_days_settings", $save);
-		print_r($save);
 		$max = dl::getId();
 		$fields = array("fdt_weekday_id", "fdt_flexi_days_id", "fdt_working_time");
 		if(in_array("All", $week_day_array)) { //this array only has one element and applies to all of the days_per_week
@@ -5116,7 +5112,7 @@ function save_flexi_days_template() {
 		</script>
 		<?php 
 	}
-	//echo "<SCRIPT language='javascript'>redirect('index.php?choice=Templates&subchoice=flexidaystemplate')</SCRIPT>" ;
+	echo "<SCRIPT language='javascript'>redirect('index.php?choice=Templates&subchoice=flexidaystemplate')</SCRIPT>" ;
 }
 
 function edit_flexi_days_template() {
