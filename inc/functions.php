@@ -2927,7 +2927,7 @@ function add_event($title, $intro, $user="") {
 		}
 		//dl::$debug=true;
 		// require to retrieve template settings
-		$sql = "select * from flexi_user join flexi_template as ft on (user_flexi_template=template_id) 
+		$sql = "select * from flexi_user join flexi_template as ft on (user_flexi_template=template_name_id) 
 		join flexi_template_days as ftd on (ftd.template_name_id=ft.template_name_id) 
 		join flexi_template_days_settings as ftds on (ftds.template_days_id=ftd.flexi_template_days_id) 
 		where user_id = $userId";
