@@ -778,7 +778,7 @@ function view_timesheet($userId, $pStartDate="", $pEndDate="") {
 	join flexi_template_name as tn on (t.template_name_id=tn.flexi_template_name_id) 
 	join flexi_template_days as td on (td.template_name_id=tn.flexi_template_name_id) 
 	join flexi_template_days_settings as tds on (tds.template_days_id=td.flexi_template_days_id) 
-	where t.template_id = ".$flexiTemplate;
+	where t.template_name_id = ".$flexiTemplate;
 	$flexi_settings 						= dl::getQuery($sql);
 	$time_settings 							= dl::select("flexi_time_template", "time_template_name_id =".$timeTemplate);
 	//get day settings
@@ -2452,7 +2452,7 @@ function add_user($title, $intro) {
 
 function save_user() {
 	include("inc/email_messages.inc");
-	//dl::$debug=true;
+	dl::$debug=true;
 	//check the templates to get the id's
 	$flexi = dl::select("flexi_template_name", "description='".$_POST["flexitemp"]."'");
 	$time = dl::select("flexi_time_template_name", "time_template_name='".$_POST["timetemp"]."'");
